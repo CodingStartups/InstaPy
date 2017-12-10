@@ -11,52 +11,61 @@ def login_user(browser, username, password, switch_language=True):
     try: # check if we have login cookies
         for cookie in pickle.load(open("logs/cookies.pkl", "rb")):
             browser.add_cookie(cookie)
+    except (OSError, IOError) as e: 
+        # There is no cookie for login
+        print "No cookie found"
+    
+    browser.get('https://www.instagram.com')
+    if is_valid_login_session(browser):
         return True
-    except (OSError, IOError) as e: # There is no cookie for login
-        # Changes Instagram language to english, to ensure no errors ensue from
-        # having the site on a different language
-        # Might cause problems if the OS language is english
-        if switch_language:
-            browser.find_element_by_xpath(
-                "//footer[@class='_s5vm9']/div[@class='_g7lf5 _9z659']/nav["
-                "@class='_luodr']/ul[@class='_g8wl6']/li[@class='_538w0'][10]/"
-                "span[@class='_pqycz _hqmnd']/select[@class='_fsoey']/option"
-                "[text()='English']").click()
+    
+    # Changes Instagram language to english, to ensure no errors ensue from
+    # having the site on a different language
+    # Might cause problems if the OS language is english
+    if switch_language:
+        browser.find_element_by_xpath(
+            "//footer[@class='_s5vm9']/div[@class='_g7lf5 _9z659']/nav["
+            "@class='_luodr']/ul[@class='_g8wl6']/li[@class='_538w0'][10]/"
+            "span[@class='_pqycz _hqmnd']/select[@class='_fsoey']/option"
+            "[text()='English']").click()
 
-        # Check if the first div is 'Create an Account' or 'Log In'
-        login_elem = browser.find_element_by_xpath(
-            "//article/div/div/p/a[text()='Log in']")
-        if login_elem is not None:
-            ActionChains(browser).move_to_element(login_elem).click().perform()
+    # Check if the first div is 'Create an Account' or 'Log In'
+    login_elem = browser.find_element_by_xpath(
+        "//article/div/div/p/a[text()='Log in']")
+    if login_elem is not None:
+        ActionChains(browser).move_to_element(login_elem).click().perform()
 
-        # Enter username and password and logs the user in
-        # Sometimes the element name isn't 'Username' and 'Password'
-        # (valid for placeholder too)
-        input_username = browser.find_elements_by_xpath(
-            "//input[@name='username']")
+    # Enter username and password and logs the user in
+    # Sometimes the element name isn't 'Username' and 'Password'
+    # (valid for placeholder too)
+    input_username = browser.find_elements_by_xpath(
+        "//input[@name='username']")
 
-        ActionChains(browser).move_to_element(input_username[0]). \
-            click().send_keys(username).perform()
-        sleep(1)
-        input_password = browser.find_elements_by_xpath(
-            "//input[@name='password']")
-        ActionChains(browser).move_to_element(input_password[0]). \
-            click().send_keys(password).perform()
+    ActionChains(browser).move_to_element(input_username[0]). \
+        click().send_keys(username).perform()
+    sleep(1)
+    input_password = browser.find_elements_by_xpath(
+        "//input[@name='password']")
+    ActionChains(browser).move_to_element(input_password[0]). \
+        click().send_keys(password).perform()
 
-        login_button = browser.find_element_by_xpath(
-            "//form/span/button[text()='Log in']")
-        ActionChains(browser).move_to_element(login_button).click().perform()
-        # update server calls
-        update_activity()
+    login_button = browser.find_element_by_xpath(
+        "//form/span/button[text()='Log in']")
+    ActionChains(browser).move_to_element(login_button).click().perform()
+    # update server calls
+    update_activity()
 
-        sleep(5)
+    sleep(5)
+    return is_valid_login_session(browser)
 
-        # Check if user is logged-in (If there's two 'nav' elements)
-        nav = browser.find_elements_by_xpath('//nav')
-        if len(nav) == 2:
-            # save login cookie for next time
-            pickle.dump(browser.get_cookies(), open("logs/cookies.pkl", "wb"))
-            return True
-        else:
-            return False
+        
+def is_valid_login_session(browser):
+    # Check if user is logged-in (If there's two 'nav' elements)
+    nav = browser.find_elements_by_xpath('//nav')
+    if len(nav) == 2:
+        # save login cookie for next time
+        pickle.dump(browser.get_cookies(), open("logs/cookies.pkl", "wb"))
+        return True
+    else:
+        return False
 
